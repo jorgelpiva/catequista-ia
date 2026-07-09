@@ -11,7 +11,7 @@ if not API_KEY:
     raise ValueError("GEMINI_API_KEY não configurada no arquivo .env")
 
 # URL direta da API REST do Gemini
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={API_KEY}"
 
 def generate_response(system_prompt: str, history: list, new_message: str) -> str:
     """
@@ -70,7 +70,7 @@ def count_tokens(text: str) -> int:
     """
     Estima os tokens usando a API REST de contagem do modelo.
     """
-    count_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:countTokens?key={API_KEY}"
+    count_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:countTokens?key={API_KEY}"
     payload_bytes = json.dumps({"contents": [{"parts": [{"text": text}]}]}).encode('utf-8')
     req = urllib.request.Request(count_url, data=payload_bytes, headers={"Content-Type": "application/json"})
     
