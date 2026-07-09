@@ -1,12 +1,17 @@
 import { createRxDatabase, addRxPlugin } from 'rxdb';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
+import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema';
+import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder';
+
+addRxPlugin(RxDBMigrationSchemaPlugin);
+addRxPlugin(RxDBQueryBuilderPlugin);
 
 // Vamos armazenar a referência global do banco
 let dbPromise = null;
 
 const conversationSchema = {
     title: 'conversation schema',
-    version: 0,
+    version: 1,
     primaryKey: 'id',
     type: 'object',
     properties: {
@@ -14,12 +19,13 @@ const conversationSchema = {
         title: { type: 'string' },
         createdAt: { type: 'number' }
     },
-    required: ['id', 'title', 'createdAt']
+    required: ['id', 'title', 'createdAt'],
+    indexes: ['createdAt']
 };
 
 const messageSchema = {
     title: 'message schema',
-    version: 0,
+    version: 1,
     primaryKey: 'id',
     type: 'object',
     properties: {
@@ -44,10 +50,12 @@ export const initDB = async () => {
 
         await db.addCollections({
             conversations: {
-                schema: conversationSchema
+                schema: conversationSchema,
+                migrationStrategies: { 1: (oldDoc) => oldDoc }
             },
             messages: {
-                schema: messageSchema
+                schema: messageSchema,
+                migrationStrategies: { 1: (oldDoc) => oldDoc }
             }
         });
 
