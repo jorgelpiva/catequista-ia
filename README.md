@@ -75,6 +75,13 @@ O projeto está dividido em duas partes: o **Backend** (Python) e o **Frontend**
    ```
 4. Abra o navegador na URL indicada (geralmente `http://localhost:5173`) e comece a conversar com seu Catequista Virtual!
 
+## 🗺️ Roadmap / Próximos Passos
+
+O projeto está em constante evolução. Futuramente, planejamos implementar as seguintes melhorias:
+- **Controle de Acesso (Login):** Sistema de autenticação para usuários.
+- **Deploy em Nuvem:** Hospedagem da aplicação na web para acesso de qualquer dispositivo.
+- **Sincronização em Nuvem:** Histórico de chats atrelado à conta, com bases de dados individualizadas por usuário.
+
 ---
 
 ## 📜 Licença
