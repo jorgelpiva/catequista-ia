@@ -1,6 +1,15 @@
 <template>
   <div class="app-layout">
+    <!-- Overlay para fechar no mobile -->
+    <div 
+      class="sidebar-overlay" 
+      :class="{ 'active': isSidebarOpen }"
+      @click="isSidebarOpen = false"
+    ></div>
+
     <Sidebar 
+      class="sidebar-component"
+      :class="{ 'open': isSidebarOpen }"
       :conversations="sortedConversations" 
       :current-chat-id="currentSessionId"
       @new-chat="startNewChat"
@@ -11,7 +20,16 @@
     
     <main class="main-content">
       <header class="top-bar">
-        <h1>{{ currentChatTitle || 'Nova Conversa' }}</h1>
+        <div class="header-left">
+          <button class="menu-btn" @click="isSidebarOpen = !isSidebarOpen" aria-label="Abrir menu">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <h1>{{ currentChatTitle || 'Nova Conversa' }}</h1>
+        </div>
         <div class="status" :class="{ 'online': !isLoading, 'typing': isLoading }">
           {{ isLoading ? 'Pensando...' : 'Online' }}
         </div>
@@ -46,6 +64,7 @@ const conversations = ref([]);
 const allMessages = ref([]);
 const currentSessionId = ref(null);
 const isLoading = ref(false);
+const isSidebarOpen = ref(false);
 
 const currentChatTitle = computed(() => {
   const chat = conversations.value.find(c => c.id === currentSessionId.value);
@@ -112,10 +131,12 @@ onMounted(async () => {
 
 const startNewChat = () => {
   currentSessionId.value = null;
+  isSidebarOpen.value = false;
 };
 
 const selectChat = (id) => {
   currentSessionId.value = id;
+  isSidebarOpen.value = false;
 };
 
 const handleSendMessage = async (text) => {
@@ -258,6 +279,85 @@ const handleSendMessage = async (text) => {
 .input-wrapper {
   padding: 0 24px 24px;
   background: linear-gradient(to top, var(--bg-primary) 80%, transparent);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.menu-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 15;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .sidebar-component {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    height: 100vh;
+    z-index: 20;
+    transition: left 0.3s ease;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+    background: var(--bg-secondary);
+  }
+  
+  .sidebar-component.open {
+    left: 0;
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+  
+  .top-bar {
+    padding: 12px 16px;
+  }
+  
+  .input-wrapper {
+    padding: 0 16px 16px;
+  }
+  
+  .top-bar h1 {
+    font-size: 1rem;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 @keyframes pulse {
