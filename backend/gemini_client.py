@@ -10,18 +10,27 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY não configurada no arquivo .env")
 
-# URL direta da API REST do Gemini
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={API_KEY}"
+# Lista de modelos para tentar na API gratuita
+MODELS_TO_TRY = [
+    "gemini-1.5-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-2.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
+    "gemini-3.5-flash",
+    "gemini-pro-latest",
+    "gemini-2.0-flash"
+]
 
 def generate_response(system_prompt: str, history: list, new_message: str) -> str:
     """
-    Gera a resposta usando a API REST do Gemini 1.5 Flash.
+    Gera a resposta usando a API REST do Gemini com fallback automático de modelos.
     """
     
     # Formata o histórico
     contents = []
     
-    # Injeta a instrução de sistema (já que a v1beta REST systemInstruction é complexa)
+    # Injeta a instrução de sistema
     contents.append({
         "role": "user",
         "parts": [{"text": f"INSTRUÇÃO DO SISTEMA:\n{system_prompt}\n\nAja estritamente de acordo com esta instrução."}]
@@ -45,39 +54,44 @@ def generate_response(system_prompt: str, history: list, new_message: str) -> st
         "parts": [{"text": new_message}]
     })
     
-    payload = {
-        "contents": contents
-    }
-    
-    headers = {
-        "Content-Type": "application/json"
-    }
-
+    payload = {"contents": contents}
+    headers = {"Content-Type": "application/json"}
     payload_bytes = json.dumps(payload).encode('utf-8')
-    req = urllib.request.Request(GEMINI_API_URL, data=payload_bytes, headers=headers)
     
-    try:
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode('utf-8'))
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-    except urllib.error.HTTPError as e:
-        error_msg = e.read().decode('utf-8')
-        raise ValueError(f"Erro da API Gemini ({e.code}): {error_msg}")
-    except (KeyError, IndexError):
-        raise ValueError(f"Resposta inesperada da API: {data}")
+    last_error = ""
+    
+    # Tenta cada modelo da lista
+    for model in MODELS_TO_TRY:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={API_KEY}"
+        req = urllib.request.Request(url, data=payload_bytes, headers=headers)
+        try:
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+        except urllib.error.HTTPError as e:
+            last_error = f"[{model}] {e.code}: {e.read().decode('utf-8')}"
+            continue # Se falhou, tenta o próximo modelo
+        except Exception as e:
+            last_error = f"[{model}] {str(e)}"
+            continue
+
+    raise ValueError(f"Todos os modelos da cota gratuita falharam ou estão indisponíveis. Último erro: {last_error}")
 
 def count_tokens(text: str) -> int:
     """
-    Estima os tokens usando a API REST de contagem do modelo.
+    Estima os tokens. Tenta contar no primeiro modelo disponível, ou aproxima por caractere se falhar.
     """
-    count_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:countTokens?key={API_KEY}"
     payload_bytes = json.dumps({"contents": [{"parts": [{"text": text}]}]}).encode('utf-8')
-    req = urllib.request.Request(count_url, data=payload_bytes, headers={"Content-Type": "application/json"})
     
-    try:
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode('utf-8'))
-            return data.get("totalTokens", 0)
-    except Exception:
-        return len(text) // 4
+    for model in MODELS_TO_TRY:
+        count_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:countTokens?key={API_KEY}"
+        req = urllib.request.Request(count_url, data=payload_bytes, headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                return data.get("totalTokens", 0)
+        except Exception:
+            continue
+            
+    return len(text) // 4
 
