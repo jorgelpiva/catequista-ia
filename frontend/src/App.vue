@@ -216,7 +216,7 @@ const handleSendMessage = async (text) => {
 <style scoped>
 .app-layout {
   display: flex;
-  height: 100vh;
+  height: 100dvh; /* dynamic viewport height para mobile */
   width: 100vw;
   overflow: hidden;
   background-color: var(--bg-primary);
@@ -348,7 +348,8 @@ const handleSendMessage = async (text) => {
   }
   
   .input-wrapper {
-    padding: 0 16px 16px;
+    padding: 0 16px 24px; /* Mais padding no fundo */
+    margin-bottom: env(safe-area-inset-bottom, 20px); /* Previne corte do navegador/iOS */
   }
   
   .top-bar h1 {
