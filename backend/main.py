@@ -33,6 +33,7 @@ def read_root():
     return {"message": "Bem-vindo à API do Catequista IA!"}
 
 @app.post("/chat")
+@app.post("/api/chat")
 def chat_endpoint(request: ChatRequest):
     try:
         # 1. Truncar o histórico para evitar estourar o limite de tokens
