@@ -1,10 +1,12 @@
 <template>
   <div class="app-layout">
     <Sidebar 
-      :conversations="conversations" 
+      :conversations="sortedConversations" 
       :current-chat-id="currentSessionId"
       @new-chat="startNewChat"
       @select-chat="selectChat"
+      @delete-chat="deleteChat"
+      @pin-chat="pinChat"
     />
     
     <main class="main-content">
@@ -56,6 +58,38 @@ const currentMessages = computed(() => {
     .filter(m => m.conversationId === currentSessionId.value)
     .sort((a, b) => a.createdAt - b.createdAt);
 });
+
+const sortedConversations = computed(() => {
+  return [...conversations.value].sort((a, b) => {
+    // Pinned primeiro
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    // Em seguida por data decrescente
+    return b.createdAt - a.createdAt;
+  });
+});
+
+const deleteChat = async (id) => {
+  if (confirm("Deseja realmente excluir esta conversa?")) {
+    const chat = await db.value.conversations.findOne(id).exec();
+    if (chat) await chat.remove();
+    // Excluir as mensagens associadas
+    const msgs = await db.value.messages.find({ selector: { conversationId: id } }).exec();
+    for (const m of msgs) {
+      await m.remove();
+    }
+    if (currentSessionId.value === id) {
+      currentSessionId.value = null;
+    }
+  }
+};
+
+const pinChat = async (chat) => {
+  const chatDoc = await db.value.conversations.findOne(chat.id).exec();
+  if (chatDoc) {
+    await chatDoc.incrementalPatch({ pinned: !chat.pinned });
+  }
+};
 
 onMounted(async () => {
   try {

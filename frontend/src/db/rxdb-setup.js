@@ -11,13 +11,14 @@ let dbPromise = null;
 
 const conversationSchema = {
     title: 'conversation schema',
-    version: 1,
+    version: 2,
     primaryKey: 'id',
     type: 'object',
     properties: {
         id: { type: 'string', maxLength: 100 },
         title: { type: 'string' },
-        createdAt: { type: 'number' }
+        createdAt: { type: 'number' },
+        pinned: { type: 'boolean' }
     },
     required: ['id', 'title', 'createdAt'],
     indexes: ['createdAt']
@@ -51,7 +52,13 @@ export const initDB = async () => {
         await db.addCollections({
             conversations: {
                 schema: conversationSchema,
-                migrationStrategies: { 1: (oldDoc) => oldDoc }
+                migrationStrategies: { 
+                    1: (oldDoc) => oldDoc,
+                    2: (oldDoc) => {
+                        oldDoc.pinned = false;
+                        return oldDoc;
+                    }
+                }
             },
             messages: {
                 schema: messageSchema,

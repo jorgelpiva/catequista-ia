@@ -15,13 +15,21 @@
         v-for="chat in conversations" 
         :key="chat.id"
         class="chat-item"
-        :class="{ active: currentChatId === chat.id }"
+        :class="{ active: currentChatId === chat.id, pinned: chat.pinned }"
         @click="$emit('select-chat', chat.id)"
       >
-        <span class="chat-icon">💬</span>
+        <span class="chat-icon">{{ chat.pinned ? '📌' : '💬' }}</span>
         <div class="chat-info">
           <div class="chat-title">{{ chat.title }}</div>
           <div class="chat-date">{{ formatDate(chat.createdAt) }}</div>
+        </div>
+        <div class="chat-actions">
+          <button @click.stop="$emit('pin-chat', chat)" :title="chat.pinned ? 'Desafixar' : 'Fixar'" class="action-btn">
+            {{ chat.pinned ? '📍' : '📌' }}
+          </button>
+          <button @click.stop="$emit('delete-chat', chat.id)" title="Excluir" class="action-btn delete">
+            🗑️
+          </button>
         </div>
       </div>
       
@@ -44,7 +52,7 @@ defineProps({
   }
 });
 
-defineEmits(['new-chat', 'select-chat']);
+defineEmits(['new-chat', 'select-chat', 'delete-chat', 'pin-chat']);
 
 const formatDate = (timestamp) => {
   if (!timestamp) return '';
@@ -159,5 +167,40 @@ const formatDate = (timestamp) => {
   font-size: 0.85rem;
   padding: 20px;
   font-style: italic;
+}
+
+.chat-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  margin-left: auto;
+}
+
+.chat-item:hover .chat-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn.delete:hover {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.chat-item.pinned {
+  border-left: 3px solid #ff9800; /* Laranja para diferenciá-lo do chat ativo (amarelo) */
 }
 </style>
